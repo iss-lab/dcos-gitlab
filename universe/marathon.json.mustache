@@ -1,35 +1,158 @@
 
 {
   "id": "{{service.name}}",
-  "user": "{{service.user}}",
-  "instances": {{node.count}},
-  "cpus": {{node.cpus}},
-  "mem": {{node.mem}},
-  "cmd": "env | sort && ./cmd.sh",
-  "labels": {
-    "DCOS_SERVICE_NAME": "{{service.name}}",
-    "DCOS_SERVICE_PORT_INDEX": "0",
-    "DCOS_SERVICE_SCHEME": "http"
+  "cpus": {{service.cpus}},
+  "mem": {{service.mem}},
+  "instances": 1,
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "forcePullImage": false,
+      "image": "{{resource.assets.container.docker.gitlab}}",
+      "parameters": [],
+      "privileged": false
+    },
+    "portMappings": [
+      {
+        "name": "web",
+        "containerPort": 80,
+        "hostPort": 0,
+        "labels": {},
+        "protocol": "tcp"
+      },
+      {
+        "name": "web-ssl",
+        "containerPort": 443,
+        "hostPort": 0,
+        "labels": {},
+        "protocol": "tcp"
+      },
+      {
+        "name": "ssh",
+        "containerPort": 22,
+        "hostPort": 0,
+        "labels": {},
+        "protocol": "tcp"
+      },
+      {
+        "name": "registry",
+        "containerPort": {{service.registry-port}}
+        "hostPort": 0,
+        "labels": {},
+        "protocol": "tcp"
+      }
+    ],
+    "volumes": [
+      {
+        "containerPath": "/var/opt/gitlab",
+        "hostPath": "{{service.host-volume}}/gitlab/gitlab/opt",
+        "mode": "RW"
+      },
+      {
+        "containerPath": "/var/log/gitlab",
+        "hostPath": "{{service.host-volume}}/gitlab/gitlab/log",
+        "mode": "RW"
+      },
+      {
+        "containerPath": "/etc/gitlab",
+        "hostPath": "{{service.host-volume}}/gitlab-data/gitlab/config",
+        "mode": "RW"
+      },
+      {
+        "containerPath": "/gitlab-data",
+        "hostPath": "{{service.host-volume}}/gitlab-data/gitlab/data",
+        "mode": "RW"
+      },
+      {
+        "containerPath": "/gitlab-pages",
+        "hostPath": "{{service.host-volume}}/gitlab-data/gitlab/pages",
+        "mode": "RW"
+      }
+    ]
   },
-  {{#service.service_account_secret}}
-  "secrets": {
-    "serviceCredential": {
-      "source": "{{service.service_account_secret}}"
-    }
-  },
-  {{/service.service_account_secret}}
   "env": {
-    "PACKAGE_NAME": "{{package-name}}",
-    "PACKAGE_VERSION": "{{package-version}}",
-    "PACKAGE_BUILD_TIME_EPOCH_MS": "%(time_epoche_ms)s",
-    "PACKAGE_BUILD_TIME_STR": "%(time_str)s",
-    "SLEEP_DURATION": "{{service.sleep}}"
+      "PACKAGE_NAME": "{{package-name}}",
+      "PACKAGE_VERSION": "{{package-version}}",
+      "PACKAGE_BUILD_TIME_EPOCH_MS": "%(time_epoche_ms)s",
+      "PACKAGE_BUILD_TIME_STR": "%(time_str)s",
+      
+      "CONFIG_TEMPLATE_GITLAB": "gitlab.rb.mustache,/etc/gitlab/gitlab.rb",
+
+      {{#service.GITLAB_RB_MUSTACHE_BASE64}}
+      "GITLAB_RB_MUSTACHE_BASE64": "{{service.GITLAB_RB_MUSTACHE_BASE64}}",
+      {{/service.GITLAB_RB_MUSTACHE_BASE64}}
+      
+      "LFS_ACCESS_KEY": {
+        "secret":"secret0"
+      },
+      "LFS_SECRET_KEY": {
+        "secret":"secret1"
+      },
+      "LDAP_UID": {
+        "secret": "secret2"
+      },
+      "LDAP_PASSWORD": {
+        "secret": "secret3"
+      }
   },
   "fetch": [
-    {"uri": "{{resource.assets.uris.cmd}}", "executable": true}
+    {
+      "uri": "{{resource.assets.uris.bootstrap-zip}}",
+      "extract": true,
+      "executable": false,
+      "cache": false
+    },
+    {
+      "uri": "{{resource.assets.uris.cmd-sh}}", 
+      "executable": true,
+      "extract": false,
+      "cache": false
+    },
+    {
+      "uri": "{{resource.assets.uris.gitlab-rb-mustache}}",
+      "extract": false,
+      "executable": false,
+      "cache": false
+    }
   ],
+  "cmd": "/mnt/mesos/sandbox/cmd.sh",
+  "secrets": {
+    "secret0": {
+      "source": "{{service.lfs-access-key-secret}}"
+    },
+    "secret1": {
+      "source": "{{service.lfs-secret-key-secret}}"
+    },
+    "secret2": {
+      "source": "{{service.ldap-uid-secret}}"
+    },
+    "secret3": {
+      "source": "{{service.ldap-password-secret}}"
+    }
+  },
+  "networks": [
+    {
+      "mode": "container/bridge"
+    }
+  ],
+  "acceptedResourceRoles": [ "{{service.role}}" ],
+  "healthChecks": [
+    {
+      "protocol": "COMMAND",
+      "command": { "value": "/opt/gitlab/bin/gitlab-healthcheck --fail > /dev/null" },
+      "gracePeriodSeconds": 300,
+      "intervalSeconds": 60,
+      "timeoutSeconds": 20,
+      "maxConsecutiveFailures": 5
+    }
+  ],
+  "labels": {
+    "MARATHON_SINGLE_INSTANCE_APP": "true",
+    "DCOS_SERVICE_NAME": "{{service.name}}"
+  },
   "upgradeStrategy":{
     "minimumHealthCapacity": 0,
     "maximumOverCapacity": 0
   }
+  "constraints": [["hostname", "CLUSTER", "{{service.pinned-hostname}}"]]
 }

@@ -1,16 +1,28 @@
 
 {
   "packagingVersion": "4.0",
-  "upgradesFrom": ["{{upgrades-from}}"],
-  "downgradesTo": ["{{downgrades-to}}"],
+  "upgradesFrom": ["%(upgrades-from)s"],
+  "downgradesTo": ["%(downgrades-to)s"],
   "minDcosReleaseVersion": "1.9",
   "name": "gitlab",
-  "version": "{{package-version}}",
-  "maintainer": "support@YOURNAMEHERE.COM",
-  "description": "YOURNAMEHERE on DC/OS",
+  "version": "%(package-version)s",
+  "scm": "https://gitlab.com/gitlab-org/gitlab-ce",
+  "website": "https://about.gitlab.com/",
+  "maintainer": "%(maintainer)s",
+  "description": "Collaboration and source control management: code, test, and deploy together! Installation Guide: https://github.com/dcos/examples/tree/master/1.8/gitlab",
   "selected": false,
   "framework": false,
-  "tags": ["gitlab"],
-  "postInstallNotes": "DC/OS YOURNAMEHERE is being installed!\n\n\tDocumentation: {{documentation-path}}\n\tIssues: {{issues-path}}",
-  "postUninstallNotes": "DC/OS YOURNAMEHERE is being uninstalled."
+  "tags": ["gitlab","continuous-integration","ci","vcs","version-control-software"],
+  "postInstallNotes": "DC/OS gitlab is being installed!\\n\\n\\tDocumentation: %(documentation-path)s\\n\\tIssues: %(issues-path)s",
+  "postUninstallNotes": "GitLab has been uninstalled. Note that any data persisted to a NFS share still exists and will need to be manually removed.",
+  "licenses": [
+    {
+      "name": "MIT License",
+      "url": "https://gitlab.com/gitlab-org/gitlab-ce/raw/master/LICENSE"
+    },
+    {
+      "name": "EE License",
+      "url": "https://gitlab.com/gitlab-org/gitlab-ee/raw/master/LICENSE"
+    }
+  ]
 }
