@@ -36,7 +36,7 @@
       },
       {
         "name": "registry",
-        "containerPort": {{service.registry-port}}
+        "containerPort": {{service.registry-port}},
         "hostPort": 0,
         "labels": {},
         "protocol": "tcp"
@@ -153,6 +153,6 @@
   "upgradeStrategy":{
     "minimumHealthCapacity": 0,
     "maximumOverCapacity": 0
-  }
+  },
   "constraints": [["hostname", "CLUSTER", "{{service.pinned-hostname}}"]]
 }
